@@ -1,0 +1,39 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: generator-api
+  namespace: api
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    name: generator-api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: generator-api
+  namespace: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: generator-api
+  template:
+    metadata:
+      labels:
+        name: generator-api
+    spec:
+      containers:
+      - name: generator
+        image: registry.gitlab.com/sentence-application/generator/generator-via-apigw:latest
+        imagePullPolicy: Always
+        env:
+        - name: NAMESPACE
+          value: apigw
+        ports:
+        - containerPort: 8080
