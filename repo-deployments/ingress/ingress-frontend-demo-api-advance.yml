@@ -1,0 +1,83 @@
+---
+apiVersion: k8s.nginx.org/v1
+kind: VirtualServer
+metadata:
+  name: frontend-api-ingress
+  namespace: api
+spec:
+  host: front-1-api.demo-it.shop
+  policies:
+  - name: rate-limit-policy
+  upstreams:
+  - name: frontend-api
+    service: frontend-api
+    port: 80
+  routes:
+  - path: /
+    action:
+      pass: frontend-api
+  - path: /auth
+    route: apigw/apigw-microapigw
+  - path: /stop
+    route: apigw/apigw-1-microapigw
+  - path: /message
+    route: apigw/apigw-2-microapigw
+---
+apiVersion: k8s.nginx.org/v1
+kind: Policy
+metadata:
+  name: rate-limit-policy
+  namespace: api
+spec:
+  rateLimit:
+    rate: 3r/s
+    key: ${binary_remote_addr}
+    zoneSize: 10M
+---
+apiVersion: k8s.nginx.org/v1
+kind: VirtualServerRoute
+metadata:
+  name: apigw-microapigw
+  namespace: apigw
+spec:
+  host: front-1-api.demo-it.shop
+  upstreams:
+  - name: apigw-microapigw
+    service: apigw-microapigw
+    port: 80
+  subroutes:
+  - path: /auth
+    action:
+      pass: apigw-microapigw
+---
+apiVersion: k8s.nginx.org/v1
+kind: VirtualServerRoute
+metadata:
+  name: apigw-1-microapigw
+  namespace: apigw
+spec:
+  host: front-1-api.demo-it.shop
+  upstreams:
+  - name: apigw-1-microapigw
+    service: apigw-microapigw
+    port: 80
+  subroutes:
+  - path: /stop
+    action:
+      pass: apigw-1-microapigw
+---
+apiVersion: k8s.nginx.org/v1
+kind: VirtualServerRoute
+metadata:
+  name: apigw-2-microapigw
+  namespace: apigw
+spec:
+  host: front-1-api.demo-it.shop
+  upstreams:
+  - name: apigw-2-microapigw
+    service: apigw-microapigw
+    port: 80
+  subroutes:
+  - path: /message
+    action:
+      pass: apigw-2-microapigw

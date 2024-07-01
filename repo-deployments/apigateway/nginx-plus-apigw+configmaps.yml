@@ -1,0 +1,52 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apigw-microapigw
+  namespace: apigw
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: nginx-plus-apigw
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx-plus-apigw
+  name: nginx-plus-apigw
+  namespace: apigw
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-plus-apigw
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: nginx-plus-apigw
+    spec:
+      containers:
+      - image: private-registry.nginx.com/nginx-plus/base:r32-ubi-9
+        name: base
+        volumeMounts:
+        - mountPath: /etc/nginx/conf.d/
+          name: nginx-default-conf
+        - mountPath: /etc/nginx/conf/
+          name: nginx-token-1-conf
+        ports:
+        - name: http 
+          containerPort: 8080
+      imagePullSecrets:
+      - name: token-f5-trial
+      volumes:
+      - configMap:
+          name: nginx-default-conf
+        name: nginx-default-conf
+      - configMap:
+          name: nginx-token-1-conf
+        name: nginx-token-1-conf

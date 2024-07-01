@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: adjectives-message-ingress
+  namespace: apigw
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: message.demo-it.shop
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: apigw-microapigw 
+            port:
+              number: 80
+
+

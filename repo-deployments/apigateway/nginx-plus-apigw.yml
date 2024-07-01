@@ -1,0 +1,109 @@
+limit_req_zone $binary_remote_addr zone=mylimit:10m rate=1r/s;
+
+
+server {
+    set $api_name -; # Start with an undefined API name, each API will update this value
+    #access_log /var/log/nginx/api_access.log api_main; # Each API may also log to a separate file
+
+    listen 8080;
+    #server_name api.example.com;
+
+    # TLS config
+    #ssl_certificate      /etc/ssl/certs/api.example.com.crt;
+    #ssl_certificate_key  /etc/ssl/private/api.example.com.key;
+    #ssl_session_cache    shared:SSL:10m;
+    #ssl_session_timeout  5m;
+    #ssl_ciphers          HIGH:!aNULL:!MD5;
+    #ssl_protocols        TLSv1.1 TLSv1.2;
+
+
+
+# API definition
+#
+
+
+
+location /message {
+    #set $upstream warehouse_inventory;
+    #rewrite ^ /adjectives last;
+    #limit_req zone=mylimit;
+    auth_jwt "Products API";
+    auth_jwt_key_file conf/api_secret.jwk;
+    proxy_pass http://adjectives.api/adjectives;
+    error_page 401 = @401;
+}
+
+location @401 { return 401 '{"status":401,"message":"ACCESO DENEGADO"}\n'; }
+
+location /auth {
+    #set $upstream warehouse_inventory;
+    #rewrite ^ /adjectives last;
+    #limit_req zone=mylimit;
+    auth_jwt "Products API";
+    auth_jwt_key_file conf/api_secret.jwk;
+    proxy_pass http://adjectives.api/adjectives;
+}
+
+
+location /stop {
+    #set $upstream warehouse_inventory;
+    #rewrite ^ /adjectives last;
+    limit_req zone=mylimit;
+    proxy_pass http://adjectives.api/adjectives;
+}
+
+location /adjectives {
+    #set $upstream warehouse_inventory;
+    #rewrite ^ /_warehouse last;
+    proxy_pass http://adjectives.api;
+}
+
+location /animals {
+    #set $upstream warehouse_pricing;
+    #rewrite ^ /_warehouse last;
+    #proxy_set_header Host $host;
+    #proxy_set_header X-Real-IP $remote_addr;
+    #proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    #proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_pass http://animals.api;
+}
+
+location /colors {
+    #set $upstream warehouse_inventory;
+    #rewrite ^ /_warehouse last;
+    proxy_pass http://colors.api;
+}
+
+location /locations {
+    #set $upstream warehouse_pricing;
+    #rewrite ^ /_warehouse last;
+    proxy_pass http://locations.api;
+}
+
+
+
+# Policy section
+#
+#location = /_warehouse {
+#    internal;
+#    set $api_name "Warehouse";
+
+#    # Policy configuration here (authentication, rate limiting, logging, more...)
+
+#    proxy_pass http://$upstream$request_uri;
+#}
+
+
+
+
+    # API definitions, one per file
+    #include api_conf.d/*.conf;
+
+    # Error responses
+    #error_page 404 = @400;         # Invalid paths are treated as bad requests
+    #proxy_intercept_errors on;     # Do not send backend errors to the client
+    #include api_json_errors.conf;  # API client friendly JSON error responses
+    #default_type application/json; # If no content-type then assume JSON
+}
+
+
